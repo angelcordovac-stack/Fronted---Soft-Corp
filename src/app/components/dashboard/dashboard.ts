@@ -31,8 +31,8 @@ export class Dashboard implements OnInit {
   private readonly STATIC_MENU: MenuItem[] = [
     { label: 'Inicio',          icon: '📊', url: '/dashboard',                       roles: ['JEFE', 'TECNICO', 'SISTEMAS'] },
     { label: 'Incidencias',     icon: '🛠️', url: '/dashboard/GestionIncidencias',    roles: ['JEFE', 'TECNICO', 'SISTEMAS'] },
-    { label: 'Repuestos',       icon: '📦', url: '/dashboard/GestionRepuestos',      roles: ['JEFE', 'TECNICO', 'SISTEMAS'] },
-    { label: 'Diccionario',     icon: '📖', url: '/dashboard/DiccionarioFallas',     roles: ['TECNICO', 'SISTEMAS'] },
+    { label: 'Repuestos',       icon: '📦', url: '/dashboard/GestionRepuestos',      roles: ['TECNICO'] },
+    { label: 'Diccionario',     icon: '📖', url: '/dashboard/DiccionarioFallas',     roles: ['JEFE', 'TECNICO', 'SISTEMAS'] },
     { label: 'Mantenimiento',   icon: '🔐', url: '/dashboard/MantenimientoUsuarios', roles: ['JEFE'] },
   ];
 

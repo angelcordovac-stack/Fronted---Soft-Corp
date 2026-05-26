@@ -23,6 +23,7 @@ export class DiccionarioFallas implements OnInit {
   rolCodigo = '';
 
   showModal = false;
+  guardando = false;
   formData: DiccionarioFalla = this.emptyForm();
 
   ngOnInit(): void {
@@ -64,34 +65,44 @@ export class DiccionarioFallas implements OnInit {
 
   abrirNueva(): void {
     this.formData = this.emptyForm();
+    this.guardando = false;
     this.showModal = true;
   }
 
   cerrarModal(): void {
     this.showModal = false;
+    this.guardando = false;
   }
 
   guardar(): void {
+    if (this.guardando) return;
     if (!this.formData.problemaComun?.trim() || !this.formData.solucionSugerida?.trim()) {
       this.toast.show('Completa el problema y la solución.', 'warning');
       return;
     }
+    this.guardando = true;
     const user = this.session.getInfoSession();
     this.formData.idAutor = user?.idUsuario;
 
     this.svc.registrar(this.formData).subscribe({
       next: () => {
         this.toast.show('Falla registrada correctamente.', 'success');
+        this.guardando = false;
         this.cerrarModal();
         this.cargar();
       },
-      error: () => this.toast.show('Error al registrar la falla.', 'danger'),
+      error: () => {
+        this.toast.show('Error al registrar la falla.', 'danger');
+        this.guardando = false;
+      },
     });
   }
 
-  get esTecnico(): boolean { return this.rolCodigo === 'TECNICO'; }
+  get puedeAgregar(): boolean {
+    return this.rolCodigo === 'TECNICO' || this.rolCodigo === 'SISTEMAS';
+  }
+
   get esJefe(): boolean { return this.rolCodigo === 'JEFE'; }
-  get esSistemas(): boolean { return this.rolCodigo === 'SISTEMAS'; }
 
   private emptyForm(): DiccionarioFalla {
     return { problemaComun: '', solucionSugerida: '' };

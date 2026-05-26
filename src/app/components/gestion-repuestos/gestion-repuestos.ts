@@ -27,9 +27,14 @@ export class GestionRepuestos implements OnInit {
   filtroEstado: string = 'TODOS';
   rolCodigo = '';
 
-  // Modal solicitar
+  // Formulario solicitar
   showSolicitarModal = false;
-  formSolicitar = { idIncidencia: null as number | null, descripcion: '' };
+  formSolicitar = {
+    idIncidencia: null as number | null,
+    descripcion: '',
+    cantidad: 1,
+    urgencia: 'estandar',
+  };
 
   ngOnInit(): void {
     this.rolCodigo = this.session.getInfoSession()?.rol?.codigo ?? '';
@@ -71,13 +76,16 @@ export class GestionRepuestos implements OnInit {
   }
 
   abrirSolicitar(): void {
-    this.formSolicitar = { idIncidencia: null, descripcion: '' };
+    this.formSolicitar = { idIncidencia: null, descripcion: '', cantidad: 1, urgencia: 'estandar' };
     this.showSolicitarModal = true;
   }
 
   cerrarSolicitar(): void {
     this.showSolicitarModal = false;
   }
+
+  incrementarCantidad(): void { this.formSolicitar.cantidad++; }
+  decrementarCantidad(): void { if (this.formSolicitar.cantidad > 1) this.formSolicitar.cantidad--; }
 
   guardarSolicitar(): void {
     if (!this.formSolicitar.idIncidencia || !this.formSolicitar.descripcion.trim()) {

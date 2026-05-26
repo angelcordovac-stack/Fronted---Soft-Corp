@@ -1,75 +1,85 @@
-<div class="mant">
-  <div class="mant__header">
-    <div>
-      <h1>🛠️ Incidencias</h1>
-      <p *ngIf="esTecnico">Lista de incidencias en el sistema.</p>
-      <p *ngIf="esJefe">Vista general de todas las incidencias del sistema.</p>
+<div class="inc">
+
+  <!-- HEADER -->
+  <div class="inc__header">
+    <div class="inc__header-left">
+      <h1 class="inc__title">Consola de<br>Incidencias</h1>
+      <p class="inc__subtitle" *ngIf="esTecnico">Incidencias asignadas a ti para atender y resolver.</p>
+      <p class="inc__subtitle" *ngIf="esJefe">Supervisión de solicitudes de soporte activas. Monitorea y resuelve cuellos de botella críticos.</p>
     </div>
-
-    <div class="mant__header-actions">
+    <div class="inc__header-actions">
       <button class="btn btn--primary" (click)="abrirCrear()">+ Nueva Incidencia</button>
-
-      <div class="filter-group">
-        <label>Filtrar:</label>
-        <select [(ngModel)]="filtroEstado">
-          <option value="TODAS">Todas</option>
-          <option value="Pendiente">Pendientes</option>
-          <option value="Solucionado">Solucionadas</option>
-        </select>
-      </div>
     </div>
   </div>
 
-  <div *ngIf="isLoading" class="loading">Cargando incidencias...</div>
+  <!-- FILTRO + TABLA -->
+  <div class="inc__card">
 
-  <div *ngIf="!isLoading" class="mant__table-wrap">
-    <table class="mant__table">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Equipo</th>
-          <th>Descripcion</th>
-          <th>Estado</th>
-          <th>Tecnico</th>
-          <th>Fecha</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let i of incidenciasFiltradas; let idx = index">
-          <td>{{ idx + 1 }}</td>
-          <td>{{ i.codigoEquipo || '—' }}</td>
-          <td>{{ i.descripcionProblema || '—' }}</td>
-          <td>
-            <span class="badge" [ngClass]="getEstadoClass(i.estado || '')">
-              {{ i.estado || '—' }}
-            </span>
-          </td>
-          <td>{{ i.idTecnicoAsignado || '—' }}</td>
-          <td>{{ i.fechaRegistro | date:'short' }}</td>
-          <td class="mant__actions">
-            <button
-              *ngIf="esTecnico && i.estado === 'Pendiente' && i.idTecnicoAsignado"
-              class="btn btn--sm btn--primary"
-              (click)="abrirSolucionar(i)"
-            >✓ Solucionar</button>
+    <!-- Barra de filtros -->
+    <div class="inc__toolbar">
+      <div class="inc__filter-tabs">
+        <button class="inc__tab" [class.inc__tab--active]="filtroEstado === 'TODAS'"      (click)="filtroEstado = 'TODAS'">Todos</button>
+        <button class="inc__tab" [class.inc__tab--active]="filtroEstado === 'Pendiente'"  (click)="filtroEstado = 'Pendiente'">Pendientes</button>
+        <button class="inc__tab" [class.inc__tab--active]="filtroEstado === 'Solucionado'" (click)="filtroEstado = 'Solucionado'">Solucionadas</button>
+      </div>
+    </div>
 
-            <button
-              *ngIf="esJefe && i.estado === 'Pendiente'"
-              class="btn btn--sm btn--warning"
-              (click)="abrirAsignar(i)"
-            >👤 Asignar</button>
+    <div *ngIf="isLoading" class="inc__loading">Cargando incidencias...</div>
 
-            <span *ngIf="i.estado === 'Solucionado'" style="color:#198754; font-weight:bold;">✓ Listo</span>
-          </td>
-        </tr>
-        <tr *ngIf="incidenciasFiltradas.length === 0">
-          <td colspan="7" style="text-align:center; color:#888; padding:2rem;">
-            No hay incidencias para mostrar.
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div *ngIf="!isLoading" class="inc__table-wrap">
+      <table class="inc__table">
+        <thead>
+          <tr>
+            <th>CÓDIGO</th>
+            <th>EQUIPO</th>
+            <th>PROBLEMA</th>
+            <th>ESTADO</th>
+            <th>TÉCNICO</th>
+            <th>FECHA</th>
+            <th>ACCIONES</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let i of incidenciasFiltradas">
+            <td class="inc__code">#INC-{{ i.idIncidencia }}</td>
+            <td>{{ i.codigoEquipo || '—' }}</td>
+            <td class="inc__desc">{{ i.descripcionProblema || '—' }}</td>
+            <td>
+              <span class="badge" [ngClass]="getEstadoClass(i.estado || '')">
+                {{ i.estado || '—' }}
+              </span>
+            </td>
+            <td>
+              <span *ngIf="i.idTecnicoAsignado; else sinTecnico" class="inc__tecnico">
+                {{ i.idTecnicoAsignado }}
+              </span>
+              <ng-template #sinTecnico>
+                <span class="inc__unassigned">Sin asignar</span>
+              </ng-template>
+            </td>
+            <td class="inc__fecha">{{ i.fechaRegistro | date:'d MMM yy, h:mm a' }}</td>
+            <td class="inc__actions">
+              <button
+                *ngIf="esTecnico && i.estado === 'Pendiente' && i.idTecnicoAsignado"
+                class="btn btn--sm btn--success"
+                (click)="abrirSolucionar(i)"
+              >✓ Solucionar</button>
+
+              <button
+                *ngIf="esJefe && i.estado === 'Pendiente'"
+                class="btn btn--sm btn--warning"
+                (click)="abrirAsignar(i)"
+              >👤 Asignar</button>
+
+              <span *ngIf="i.estado === 'Solucionado'" class="inc__resolved">✓ Listo</span>
+            </td>
+          </tr>
+          <tr *ngIf="incidenciasFiltradas.length === 0">
+            <td colspan="7" class="inc__empty">No hay incidencias para mostrar.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <!-- MODAL CREAR INCIDENCIA -->
@@ -106,16 +116,16 @@
   <div class="mant-modal-overlay" *ngIf="showAsignarModal" (click)="cerrarAsignar()">
     <div class="mant-modal" (click)="$event.stopPropagation()">
       <div class="mant-modal__header">
-        <h2>👤 Asignar tecnico</h2>
+        <h2>👤 Asignar técnico</h2>
         <button class="mant-modal__close" (click)="cerrarAsignar()">✕</button>
       </div>
       <div class="mant-modal__body">
-        <p style="margin: 0 0 1rem; color: #666;">
+        <p class="mant-modal__meta">
           Incidencia #{{ incidenciaParaAsignar?.idIncidencia }} —
           {{ incidenciaParaAsignar?.codigoEquipo }}
         </p>
         <div class="form-group">
-          <label>Selecciona un tecnico</label>
+          <label>Selecciona un técnico</label>
           <select [(ngModel)]="tecnicoSeleccionado">
             <option [ngValue]="null">— Seleccionar —</option>
             <option *ngFor="let t of tecnicos"
@@ -126,9 +136,7 @@
             </option>
           </select>
         </div>
-        <p *ngIf="tecnicos.length === 0" style="color:#888; font-size:0.85rem;">
-          No hay tecnicos registrados.
-        </p>
+        <p *ngIf="tecnicos.length === 0" class="mant-modal__empty">No hay técnicos registrados.</p>
       </div>
       <div class="mant-modal__footer">
         <button class="btn btn--outline" (click)="cerrarAsignar()">Cancelar</button>
@@ -145,12 +153,12 @@
         <button class="mant-modal__close" (click)="cerrarSolucionar()">✕</button>
       </div>
       <div class="mant-modal__body">
-        <p style="margin: 0 0 1rem; color: #666;">
+        <p class="mant-modal__meta">
           Incidencia #{{ incidenciaParaSolucionar?.idIncidencia }} —
           {{ incidenciaParaSolucionar?.codigoEquipo }}
         </p>
         <div class="form-group">
-          <label>Tipo de solucion aplicada *</label>
+          <label>Tipo de solución aplicada *</label>
           <textarea rows="3" [(ngModel)]="tipoSolucionInput"
                     placeholder="Ej: Cambio de fuente de poder, reinstalacion de SO, etc."></textarea>
         </div>
@@ -161,4 +169,5 @@
       </div>
     </div>
   </div>
+
 </div>
