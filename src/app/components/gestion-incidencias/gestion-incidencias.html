@@ -1,0 +1,164 @@
+<div class="mant">
+  <div class="mant__header">
+    <div>
+      <h1>🛠️ Incidencias</h1>
+      <p *ngIf="esTecnico">Lista de incidencias en el sistema.</p>
+      <p *ngIf="esJefe">Vista general de todas las incidencias del sistema.</p>
+    </div>
+
+    <div class="mant__header-actions">
+      <button class="btn btn--primary" (click)="abrirCrear()">+ Nueva Incidencia</button>
+
+      <div class="filter-group">
+        <label>Filtrar:</label>
+        <select [(ngModel)]="filtroEstado">
+          <option value="TODAS">Todas</option>
+          <option value="Pendiente">Pendientes</option>
+          <option value="Solucionado">Solucionadas</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="loading">Cargando incidencias...</div>
+
+  <div *ngIf="!isLoading" class="mant__table-wrap">
+    <table class="mant__table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Equipo</th>
+          <th>Descripcion</th>
+          <th>Estado</th>
+          <th>Tecnico</th>
+          <th>Fecha</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let i of incidenciasFiltradas; let idx = index">
+          <td>{{ idx + 1 }}</td>
+          <td>{{ i.codigoEquipo || '—' }}</td>
+          <td>{{ i.descripcionProblema || '—' }}</td>
+          <td>
+            <span class="badge" [ngClass]="getEstadoClass(i.estado || '')">
+              {{ i.estado || '—' }}
+            </span>
+          </td>
+          <td>{{ i.idTecnicoAsignado || '—' }}</td>
+          <td>{{ i.fechaRegistro | date:'short' }}</td>
+          <td class="mant__actions">
+            <button
+              *ngIf="esTecnico && i.estado === 'Pendiente' && i.idTecnicoAsignado"
+              class="btn btn--sm btn--primary"
+              (click)="abrirSolucionar(i)"
+            >✓ Solucionar</button>
+
+            <button
+              *ngIf="esJefe && i.estado === 'Pendiente'"
+              class="btn btn--sm btn--warning"
+              (click)="abrirAsignar(i)"
+            >👤 Asignar</button>
+
+            <span *ngIf="i.estado === 'Solucionado'" style="color:#198754; font-weight:bold;">✓ Listo</span>
+          </td>
+        </tr>
+        <tr *ngIf="incidenciasFiltradas.length === 0">
+          <td colspan="7" style="text-align:center; color:#888; padding:2rem;">
+            No hay incidencias para mostrar.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- MODAL CREAR INCIDENCIA -->
+  <div class="mant-modal-overlay" *ngIf="showCrearModal" (click)="cerrarCrear()">
+    <div class="mant-modal" (click)="$event.stopPropagation()">
+      <div class="mant-modal__header">
+        <h2>+ Nueva Incidencia</h2>
+        <button class="mant-modal__close" (click)="cerrarCrear()">✕</button>
+      </div>
+      <div class="mant-modal__body">
+        <div class="form-group">
+          <label>Equipo *</label>
+          <select [(ngModel)]="nuevaIncidencia.codigoEquipo">
+            <option value="">— Seleccionar equipo —</option>
+            <option *ngFor="let e of equipos" [value]="e.codigoEquipo">
+              {{ e.codigoEquipo }} — {{ e.marcaModelo }} ({{ e.areaUbicacion }})
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Descripcion del problema *</label>
+          <textarea rows="3" [(ngModel)]="nuevaIncidencia.descripcionProblema"
+                    placeholder="Describe que ocurre..."></textarea>
+        </div>
+      </div>
+      <div class="mant-modal__footer">
+        <button class="btn btn--outline" (click)="cerrarCrear()">Cancelar</button>
+        <button class="btn btn--primary" (click)="guardarCrear()">Registrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL ASIGNAR TECNICO -->
+  <div class="mant-modal-overlay" *ngIf="showAsignarModal" (click)="cerrarAsignar()">
+    <div class="mant-modal" (click)="$event.stopPropagation()">
+      <div class="mant-modal__header">
+        <h2>👤 Asignar tecnico</h2>
+        <button class="mant-modal__close" (click)="cerrarAsignar()">✕</button>
+      </div>
+      <div class="mant-modal__body">
+        <p style="margin: 0 0 1rem; color: #666;">
+          Incidencia #{{ incidenciaParaAsignar?.idIncidencia }} —
+          {{ incidenciaParaAsignar?.codigoEquipo }}
+        </p>
+        <div class="form-group">
+          <label>Selecciona un tecnico</label>
+          <select [(ngModel)]="tecnicoSeleccionado">
+            <option [ngValue]="null">— Seleccionar —</option>
+            <option *ngFor="let t of tecnicos"
+                    [ngValue]="t.idUsuario"
+                    [disabled]="!t.disponibilidad">
+              {{ t.nombre }} — {{ t.especialidad || 'General' }}
+              {{ !t.disponibilidad ? '(no disponible)' : '' }}
+            </option>
+          </select>
+        </div>
+        <p *ngIf="tecnicos.length === 0" style="color:#888; font-size:0.85rem;">
+          No hay tecnicos registrados.
+        </p>
+      </div>
+      <div class="mant-modal__footer">
+        <button class="btn btn--outline" (click)="cerrarAsignar()">Cancelar</button>
+        <button class="btn btn--primary" (click)="confirmarAsignar()">Asignar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL SOLUCIONAR -->
+  <div class="mant-modal-overlay" *ngIf="showSolucionarModal" (click)="cerrarSolucionar()">
+    <div class="mant-modal" (click)="$event.stopPropagation()">
+      <div class="mant-modal__header">
+        <h2>✓ Marcar como solucionada</h2>
+        <button class="mant-modal__close" (click)="cerrarSolucionar()">✕</button>
+      </div>
+      <div class="mant-modal__body">
+        <p style="margin: 0 0 1rem; color: #666;">
+          Incidencia #{{ incidenciaParaSolucionar?.idIncidencia }} —
+          {{ incidenciaParaSolucionar?.codigoEquipo }}
+        </p>
+        <div class="form-group">
+          <label>Tipo de solucion aplicada *</label>
+          <textarea rows="3" [(ngModel)]="tipoSolucionInput"
+                    placeholder="Ej: Cambio de fuente de poder, reinstalacion de SO, etc."></textarea>
+        </div>
+      </div>
+      <div class="mant-modal__footer">
+        <button class="btn btn--outline" (click)="cerrarSolucionar()">Cancelar</button>
+        <button class="btn btn--primary" (click)="confirmarSolucionar()">Marcar solucionada</button>
+      </div>
+    </div>
+  </div>
+</div>

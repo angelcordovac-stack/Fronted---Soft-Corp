@@ -1,0 +1,105 @@
+<div class="mant">
+  <div class="mant__header">
+    <div>
+      <h1>🔩 Repuestos</h1>
+      <p>Vista de todos los repuestos del sistema.</p>
+    </div>
+
+    <div class="mant__header-actions">
+      <button
+        *ngIf="esTecnico"
+        class="btn btn--primary"
+        (click)="abrirSolicitar()"
+      >➕ Solicitar Repuesto</button>
+
+      <div class="filter-group">
+        <label>Filtrar:</label>
+        <select [(ngModel)]="filtroEstado">
+          <option value="TODOS">Todos</option>
+          <option value="Solicitado">Solicitados</option>
+          <option value="Entregado">Entregados</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="loading">Cargando repuestos...</div>
+
+  <div *ngIf="!isLoading" class="mant__table-wrap">
+    <table class="mant__table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Descripción</th>
+          <th>Incidencia</th>
+          <th>Estado</th>
+          <th>Fecha Solicitud</th>
+          <th>Fecha Entrega</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of repuestosFiltrados; let i = index">
+          <td>{{ i + 1 }}</td>
+          <td>{{ r.descripcion || '—' }}</td>
+          <td>{{ r.idIncidencia ? '#' + r.idIncidencia : '—' }}</td>
+          <td>
+            <span class="badge" [ngClass]="{
+              'badge--warn':    r.estado === 'Solicitado',
+              'badge--success': r.estado === 'Entregado'
+            }">{{ r.estado || '—' }}</span>
+          </td>
+          <td>{{ r.fechaSolicitud | date:'short' }}</td>
+          <td>{{ r.fechaEntrega ? (r.fechaEntrega | date:'short') : '—' }}</td>
+          <td class="mant__actions">
+            <button
+              *ngIf="(esJefe || esSistemas) && r.estado === 'Solicitado'"
+              class="btn btn--sm btn--primary"
+              (click)="entregar(r)"
+            >✓ Entregar</button>
+            <span *ngIf="r.estado === 'Entregado'" style="color:#198754; font-weight:bold;">✓ Entregado</span>
+          </td>
+        </tr>
+        <tr *ngIf="repuestosFiltrados.length === 0">
+          <td colspan="7" style="text-align:center; color:#888; padding:2rem;">No hay repuestos para mostrar.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- MODAL SOLICITAR REPUESTO -->
+  <div class="mant-modal-overlay" *ngIf="showSolicitarModal" (click)="cerrarSolicitar()">
+    <div class="mant-modal" (click)="$event.stopPropagation()">
+      <div class="mant-modal__header">
+        <h2>➕ Solicitar Repuesto</h2>
+        <button class="mant-modal__close" (click)="cerrarSolicitar()">✕</button>
+      </div>
+      <div class="mant-modal__body">
+        <div class="form-group">
+          <label>Incidencia *</label>
+          <select [(ngModel)]="formSolicitar.idIncidencia">
+            <option [ngValue]="null">— Seleccionar incidencia —</option>
+            <option *ngFor="let i of incidencias" [ngValue]="i.idIncidencia">
+              #{{ i.idIncidencia }} — {{ i.codigoEquipo }} — {{ i.descripcionProblema }}
+            </option>
+          </select>
+          <small *ngIf="incidencias.length === 0" style="color:#888;">
+            No tienes incidencias pendientes asignadas.
+          </small>
+        </div>
+        <div class="form-group">
+          <label>Descripción del repuesto *</label>
+          <textarea
+            rows="3"
+            [(ngModel)]="formSolicitar.descripcion"
+            placeholder="Ej: Disco duro SSD 500GB, Fuente de poder 500W..."
+          ></textarea>
+        </div>
+      </div>
+      <div class="mant-modal__footer">
+        <button class="btn btn--outline" (click)="cerrarSolicitar()">Cancelar</button>
+        <button class="btn btn--primary" (click)="guardarSolicitar()">Solicitar</button>
+      </div>
+    </div>
+  </div>
+</div>
